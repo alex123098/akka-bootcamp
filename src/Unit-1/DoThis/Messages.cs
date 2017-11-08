@@ -1,4 +1,6 @@
-﻿namespace WinTail
+﻿using Akka.Actor;
+
+namespace WinTail
 {
     public static class Messages
     {
@@ -8,6 +10,49 @@
         /// Tells actor to continue processing messages
         /// </summary>
         public class ContinueProcessing { }
+
+        /// <summary>
+        /// Start tailing a file at specified path
+        /// </summary>
+        public class StartTail
+        {
+            public string FilePath { get; }
+            public IActorRef ReporterActor { get; }
+
+            public StartTail(string filePath, IActorRef reporterActor)
+            {
+                FilePath = filePath;
+                ReporterActor = reporterActor;
+            }
+        }
+
+        /// <summary>
+        /// Signal to read an initial content of a file
+        /// </summary>
+        public class InitialRead
+        {
+            public string FileName { get; }
+            public string Text { get; }
+
+            public InitialRead(string fileName, string text)
+            {
+                FileName = fileName;
+                Text = text;
+            }
+        }
+
+        /// <summary>
+        /// Signals that file has changed its content
+        /// </summary>
+        public class FileChanged
+        {
+            public string FileName { get; }
+
+            public FileChanged(string fileName)
+            {
+                FileName = fileName;
+            }
+        }
 
         #endregion
 
@@ -30,6 +75,21 @@
 
         #region Error messages
 
+        /// <summary>
+        /// Indicates an error during accessing a file.
+        /// </summary>
+        public class FileError
+        {
+            public string FileName { get; }
+            public string Reason { get; }
+
+            public FileError(string fileName, string reason)
+            {
+                FileName = fileName;
+                Reason = reason;
+            }
+        }
+        
         /// <summary>
         /// Base class for signaling of invalid user input
         /// </summary>
