@@ -9,61 +9,45 @@ namespace WinTail
     /// </summary>
     public class ConsoleReaderActor : UntypedActor
     {
+        private const string ExitCommand = "exit";
         public const string StartCommand = "start";
-        public const string ExitCommand = "exit";
-        
-        private readonly IActorRef _consoleWriterActor;
 
-        public ConsoleReaderActor(IActorRef consoleWriterActor)
+        private readonly IActorRef _validationActor;
+
+        public ConsoleReaderActor(IActorRef validationActor)
         {
-            _consoleWriterActor = consoleWriterActor;
+            _validationActor = validationActor;
         }
-
+        
+        
         protected override void OnReceive(object message)
         {
-            switch (message)
+            if (StartCommand.Equals(message))
             {
-                case StartCommand:
-                    DoPrintInstructions();
-                    break;
-
-                case Messages.InputError error:
-                    _consoleWriterActor.Tell(error);
-                    break;
+                DoPrintInstructions();
             }
-            GetAndValidateInput();
+            var input = ReadInput();
+            
+            ProcessInput(input);
         }
 
+        
         #region Internal methods
-
-        private void GetAndValidateInput()
+        
+        private void ProcessInput(string input)
         {
-            var message = Console.ReadLine();
-            switch (message)
+            if (string.Equals(input, ExitCommand, StringComparison.OrdinalIgnoreCase))
             {
-                case null:
-                case string s when string.IsNullOrEmpty(s):
-                    Self.Tell(new Messages.NullInputError("No input received."));
-                    break;
-
-                case ExitCommand:
-                    Context.System.Terminate();
-                    break;
-
-                case string msg when IsValid(msg):
-                    _consoleWriterActor.Tell(new Messages.InputSuccess("Thank you! Message was valid."));
-
-                    // continue reading messages from console
-                    Self.Tell(new Messages.ContinueProcessing());
-                    break;
-
-                default:
-                    Self.Tell(new Messages.ValidationError("Invalid: input had odd number of characters."));
-                    break;
+                Context.System.Terminate();
+                return;
             }
+            _validationActor.Tell(input);
         }
 
-        private bool IsValid(string message) => message.Length % 2 == 0; 
+        private string ReadInput()
+        {
+            return Console.ReadLine();
+        }
 
         private void DoPrintInstructions()
         {
