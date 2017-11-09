@@ -7,12 +7,10 @@ namespace WinTail
     public class FileValidatorActor : UntypedActor
     {
         private readonly IActorRef _consoleWriterActor;
-        private readonly IActorRef _tailCoordinatorActor;
 
-        public FileValidatorActor(IActorRef consoleWriterActor, IActorRef tailCoordinatorActor)
+        public FileValidatorActor(IActorRef consoleWriterActor)
         {
             _consoleWriterActor = consoleWriterActor;
-            _tailCoordinatorActor = tailCoordinatorActor;
         }
         
         protected override void OnReceive(object message)
@@ -30,7 +28,8 @@ namespace WinTail
                 case string s when IsValid(s):
                     _consoleWriterActor.Tell(new Messages.InputSuccess($"Starting processing a content of {s}..."));
                     
-                    _tailCoordinatorActor.Tell(new Messages.StartTail(s, _consoleWriterActor));
+                    Context.ActorSelection("akka://MyActorSystem/user/tailCoordinator")
+                        .Tell(new Messages.StartTail(s, _consoleWriterActor));
                     break;
 
                 default:
